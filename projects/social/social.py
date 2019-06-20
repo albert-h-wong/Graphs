@@ -1,4 +1,12 @@
+import random
 
+
+def fisher_yates_shuffle(l):
+        for i in range(0, len(l) - 2):
+            random_index = random.randint(i, len(l) - 1)
+            swap = l[random_index]
+            l[random_index] = l[i]
+            l[i] = swap
 
 class User:
     def __init__(self, name):
@@ -45,10 +53,23 @@ class SocialGraph:
         self.users = {}
         self.friendships = {}
         # !!!! IMPLEMENT ME
-
+        if numUsers <= avgFriendships:
+            print("Error: The avg number of friendships must be less than the num of users.")
         # Add users
+        else:
+            users = [i for i in range(1, numUsers+1)]
+            for user in users:
+                self.addUser(user)
+            # Create friendships
+            friendships = []
+            for user in users:
+                for user2 in users:
+                    if user < user2 and user != user2:
+                        friendships.append((user, user2))
+            fisher_yates_shuffle(friendships)
+            for i in range(numUsers * avgFriendships // 2):
+                self.addFriendship(friendships[i][0], friendships[i][1])
 
-        # Create friendships
 
     def getAllSocialPaths(self, userID):
         """
@@ -61,6 +82,19 @@ class SocialGraph:
         """
         visited = {}  # Note that this is a dictionary, not a set
         # !!!! IMPLEMENT ME
+        x = []
+        x.append([userID])
+        
+        while len(x) > 0:
+            path = x.pop(0)
+            v = path[-1]
+            if v not in visited:
+                visited[v] = path
+                for friend in self.friendships[v]:
+                    path_copy = path.copy()
+                    path_copy.append(friend)
+                    x.append(path_copy)
+        
         return visited
 
 
