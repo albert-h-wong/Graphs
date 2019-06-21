@@ -17,12 +17,103 @@ roomGraph={494: [(1, 8), {'e': 457}], 492: [(1, 20), {'e': 400}], 493: [(2, 5), 
 world.loadGraph(roomGraph)
 
 # UNCOMMENT TO VIEW MAP
-world.printRooms()
+# world.printRooms()
 
 player = Player("Name", world.startingRoom)
 
+class Queue():
+    def __init__(self):
+        self.queue = []
+    def enqueue(self, value):
+        self.queue.append(value)
+    def dequeue(self):
+        if self.size() > 0:
+            return self.queue.pop(0)
+        else:
+            return None
+    def size(self):
+        return len(self.queue)
+
+
 # Fill this out
 traversalPath = []
+
+graph = {}
+
+def backtrack(direction):
+    if direction == "n":
+        return "s"
+    elif direction == "s":
+        return "n"
+    elif direction == "w":
+        return "e"
+    elif direction == "e":
+        return "w"
+
+
+def bft(graph, starting_room):
+    q = Queue()
+    # Create an empty visited dictionary 
+    visited = set() 
+    # Add a path to the starting vertex of the queue
+    path_traverse = []
+    q.enqueue([starting_room])
+    # While the queue is not empty
+    while q.size() > 0:
+        # Dequeue first path
+        path = q.dequeue()
+        # Get last vertex
+        cur_room = path[-1]
+        if cur_room not in visited:
+            visited.add(cur_room)
+            for room in graph[cur_room]:
+                if graph[cur_room][room] == "?":
+                    return path
+            for room_exit in graph[cur_room]:
+                path_traverse.append(room_exit)
+                next_room = graph[cur_room][room_exit]
+                path_copy = path.copy()
+                path_copy.append(next_room)
+                q.enqueue(path_copy)
+
+
+# While graph is fewer than 500 rooms
+while len(graph) < len(roomGraph):
+    # Save the current room ID
+    currentRoomID = player.currentRoom.id
+    # If the current room is not in the graph yet
+    if currentRoomID not in graph:
+        # Put the room into the graph with no exits yet
+        graph[currentRoomID] = {}
+        # For each exit in the room's available exits
+        for exit in player.currentRoom.getExits():
+            # Set all exit values to '?' for the first time visiting the room
+            graph[currentRoomID][exit] = "?"
+    for path in graph[currentRoomID]:
+        if path not in graph[currentRoomID]:
+            break
+        if graph[currentRoomID][path] == "?":
+            exitPath = path
+            if exitPath is not None:
+                traversalPath.append(exitPath)
+                player.travel(exitPath)
+                newRoomID = player.currentRoom.id
+                if newRoomID not in graph:
+                    graph[newRoomID] = {}
+                    for exit in player.currentRoom.getExits():
+                        graph[player.currentRoom.id][exit] = "?"
+            graph[currentRoomID][exitPath] = newRoomID
+            graph[newRoomID][backtrack(exitPath)] = currentRoomID
+            currentRoomID = newRoomID   
+    
+    visits = bft(graph, currentRoomID)
+    if visits is not None:
+        for room_num in visits:
+            for room in graph[currentRoomID]:
+                if graph[currentRoomID][room] == room_num:
+                    traversalPath.append(room)
+                    player.travel(room)
+    currentRoomID = player.currentRoom.id
 
 
 
@@ -30,6 +121,9 @@ traversalPath = []
 visited_rooms = set()
 player.currentRoom = world.startingRoom
 visited_rooms.add(player.currentRoom)
+
+# print(graph)
+# print(traversalPath)
 
 for move in traversalPath:
     player.travel(move)
